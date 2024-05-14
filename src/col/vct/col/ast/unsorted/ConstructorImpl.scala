@@ -6,7 +6,7 @@ import vct.col.print._
 
 trait ConstructorImpl[G] extends ConstructorOps[G] { this: Constructor[G] =>
   override def pure: Boolean = false
-  override def returnType: TClass[G] = TClass(cls, cls.decl.typeArgs.map((v: Variable[G]) => TVar(v.ref)))
+  override def returnType: TClass[G] = cls.decl.classType(cls.decl.typeArgs.map((v: Variable[G]) => TVar(v.ref)))
 
    override def layout(implicit ctx: Ctx): Doc = {
      Doc.stack(Seq(

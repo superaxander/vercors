@@ -106,7 +106,7 @@ case class LangPVLToCol[Pre <: Generation](rw: LangSpecificToCol[Pre], veymontGe
   def newClass(inv: PVLNew[Pre]): Expr[Post] = {
     val PVLNew(t, typeArgs, args, givenMap, yields) = inv
     val classTypeArgs = t match {
-      case TClass(_, typeArgs) => typeArgs
+      case t: TClass[Pre] => t.typeArgs
       case _ => Seq()
     }
     implicit val o: Origin = inv.o

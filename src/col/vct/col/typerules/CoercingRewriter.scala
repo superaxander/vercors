@@ -1513,7 +1513,6 @@ abstract class CoercingRewriter[Pre <: Generation]() extends BaseCoercingRewrite
       case Inhale(assn) => Inhale(res(assn))
       case Instantiate(cls, dest) => Instantiate(cls, dest)
       case inv @ InvokeConstructor(ref, classTypeArgs, out, args, outArgs, typeArgs, givenMap, yields) =>
-        val cls = TClass(ref.decl.cls, classTypeArgs)
         InvokeConstructor(ref, classTypeArgs, out, coerceArgs(args, ref.decl, inv.typeEnv, canCDemote = true), outArgs, typeArgs, coerceGiven(givenMap, canCDemote = true), coerceYields(yields, args.head))(inv.blame)
       case inv @ InvokeProcedure(ref, args, outArgs, typeArgs, givenMap, yields) =>
         InvokeProcedure(ref, coerceArgs(args, ref.decl, inv.typeEnv, canCDemote=true), outArgs, typeArgs, coerceGiven(givenMap,canCDemote=true), coerceYields(yields, args.head))(inv.blame)
@@ -1583,8 +1582,10 @@ abstract class CoercingRewriter[Pre <: Generation]() extends BaseCoercingRewrite
         new SimplificationRule[Pre](bool(rule.axiom))
       case dataType: AxiomaticDataType[Pre] =>
         dataType
-      case clazz: Class[Pre] =>
-        new Class[Pre](clazz.typeArgs, clazz.decls, clazz.supports, res(clazz.intrinsicLockInvariant))
+      case clazz: ByReferenceClass[Pre] =>
+        new ByReferenceClass[Pre](clazz.typeArgs, clazz.decls, clazz.supports, res(clazz.intrinsicLockInvariant))
+      case clazz: ByValueClass[Pre] =>
+        clazz
       case enum: Enum[Pre] =>
         enum
       case enumConstant: EnumConstant[Pre] =>
@@ -1753,7 +1754,8 @@ abstract class CoercingRewriter[Pre <: Generation]() extends BaseCoercingRewrite
 
   // PB: types may very well contain expressions eventually, but for now they don't.
   def coerce(node: Type[Pre]): Type[Pre] = node match {
-    case t @ TClass(cls, args) => arity(TClass(cls, args))
+    case t @ TByReferenceClass(cls, args) => arity(TByReferenceClass(cls, args))
+    case t @ TByValueClass(cls, args) => arity(TByValueClass(cls, args))
     case _ => node
   }
 

@@ -150,7 +150,10 @@ case class EncodeResourceValues[Pre <: Generation]() extends Rewriter[Pre] with 
           case ResourcePattern.HeapVariableLocation(_) => Nil
           case ResourcePattern.FieldLocation(f) =>
             nonGeneric(fieldOwner(f))
-            Seq(TClass(succ(fieldOwner(f)), Seq()))
+            Seq(fieldOwner(f) match {
+              case cls: ByReferenceClass[Pre] => TByReferenceClass(succ(cls), Seq())
+              case cls: ByValueClass[Pre] => TByValueClass(succ(cls), Seq())
+            })
           case ResourcePattern.ModelLocation(f) => Seq(TModel(succ(modelFieldOwner(f))))
           case ResourcePattern.SilverFieldLocation(_) => Seq(TRef())
           case ResourcePattern.ArrayLocation(t) => Seq(TArray(dispatch(t)), TInt())
@@ -158,7 +161,10 @@ case class EncodeResourceValues[Pre <: Generation]() extends Rewriter[Pre] with 
           case ResourcePattern.PredicateLocation(ref) => ref.args.map(_.t).map(dispatch)
           case ResourcePattern.InstancePredicateLocation(ref) =>
             nonGeneric(predicateOwner(ref))
-            TClass[Post](succ(predicateOwner(ref)), Seq()) +: ref.args.map(_.t).map(dispatch)
+            (predicateOwner(ref) match {
+              case cls: ByReferenceClass[Pre] => TByReferenceClass(succ[Class[Post]](cls), Seq())
+              case cls: ByValueClass[Pre] => TByValueClass(succ[Class[Post]](cls), Seq())
+            }) +: ref.args.map(_.t).map(dispatch)
         }
 
         def freeTypes(pattern: ResourcePattern): Seq[Type[Post]] = pattern match {
@@ -168,7 +174,10 @@ case class EncodeResourceValues[Pre <: Generation]() extends Rewriter[Pre] with 
           case ResourcePattern.Predicate(p) => p.args.map(_.t).map(dispatch)
           case ResourcePattern.InstancePredicate(p) =>
             nonGeneric(predicateOwner(p))
-            TClass[Post](succ(predicateOwner(p)), Seq()) +: p.args.map(_.t).map(dispatch)
+            (predicateOwner(p) match {
+              case cls: ByReferenceClass[Pre] => TByReferenceClass(succ[Class[Post]](cls), Seq())
+              case cls: ByValueClass[Pre] => TByValueClass(succ[Class[Post]](cls), Seq())
+            }) +: p.args.map(_.t).map(dispatch)
           case ResourcePattern.Star(left, right) => freeTypes(left) ++ freeTypes(right)
           case ResourcePattern.Implies(res) => freeTypes(res)
           case ResourcePattern.Select(whenTrue, whenFalse) => freeTypes(whenTrue) ++ freeTypes(whenFalse)

@@ -2,7 +2,7 @@ package vct.rewrite.veymont
 
 import com.typesafe.scalalogging.LazyLogging
 import hre.util.ScopedStack
-import vct.col.ast.{Assert, Assign, Block, ChorPerm, ChorRun, ChorStatement, Choreography, Class, Communicate, CommunicateStatement, Declaration, Deref, Endpoint, EndpointName, Eval, Expr, InstanceMethod, Local, LocalDecl, MethodInvocation, Message, Node, Perm, Procedure, Receiver, Scope, Sender, Statement, TClass, TVoid, ThisChoreography, Variable}
+import vct.col.ast.{Assert, Assign, Block, ChorPerm, ChorRun, ChorStatement, Choreography, Class, Communicate, CommunicateStatement, Declaration, Deref, Endpoint, EndpointName, Eval, Expr, InstanceMethod, Local, LocalDecl, MethodInvocation, Message, Node, Perm, Procedure, Receiver, Scope, Sender, Statement, TByReferenceClass, TVoid, ThisChoreography, Variable}
 import vct.col.origin.{AssertFailed, AssignFailed, AssignLocalOk, Blame, CallableFailure, ChorAssignFailure, ContextEverywhereFailedInPost, ContextEverywhereFailedInPre, ContractedFailure, DiagnosticOrigin, EndpointContextEverywhereFailedInPre, EndpointPreconditionFailed, ExceptionNotInSignals, InsufficientPermission, InvocationFailure, Origin, PanicBlame, ParticipantsNotDistinct, PostconditionFailed, PreconditionFailed, SeqAssignInsufficientPermission, SeqCallableFailure, SeqRunContextEverywhereFailedInPre, SeqRunPreconditionFailed, SignalsFailed, TerminationMeasureFailed, VerificationFailure}
 import vct.col.rewrite.{Generation, Rewriter, RewriterBuilder}
 import vct.col.util.AstBuildHelpers._
@@ -151,7 +151,7 @@ case class EncodeChoreography[Pre <: Generation]() extends Rewriter[Pre] with La
 
     case (InProg(prog), method: InstanceMethod[Pre]) => currentInstanceMethod.having(method) {
       for (endpoint <- prog.endpoints) {
-        endpointSucc((mode, endpoint)) = new Variable(TClass(succ[Class[Post]](endpoint.cls.decl), Seq()))(endpoint.o)
+        endpointSucc((mode, endpoint)) = new Variable(TByReferenceClass(succ[Class[Post]](endpoint.cls.decl), Seq()))(endpoint.o)
       }
 
       prog.params.foreach(_.drop())

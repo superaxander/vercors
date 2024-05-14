@@ -1,12 +1,15 @@
 package vct.col.ast.`type`
 
-import vct.col.ast.{Applicable, Class, ClassDeclaration, Constructor, ContractApplicable, InstanceField, InstanceFunction, InstanceMethod, InstanceOperatorFunction, InstanceOperatorMethod, TClass, Type, Variable}
-import vct.col.print.{Ctx, Doc, Empty, Group, Text}
-import vct.col.ast.ops.TClassOps
+import vct.col.ast.{Class, InstanceField, TByReferenceClass, TByValueClass, TClass, Type, Variable}
+import vct.col.print._
 import vct.col.ref.Ref
-import vct.result.VerificationError.Unreachable
 
-trait TClassImpl[G] extends TClassOps[G] { this: TClass[G] =>
+trait TClassImpl[G] {
+  this: TClass[G] =>
+  def cls: Ref[G, Class[G]]
+
+  def typeArgs: Seq[Type[G]]
+
   def transSupportArrowsHelper(seen: Set[TClass[G]]): Seq[(TClass[G], TClass[G])] =
     cls.decl.transSupportArrowsHelper(seen).map {
       case (clsA, clsB) => (instantiate(clsA).asClass.get, instantiate(clsB).asClass.get)
@@ -21,7 +24,9 @@ trait TClassImpl[G] extends TClassOps[G] { this: TClass[G] =>
 
   def instantiate(t: Type[G]): Type[G] =
     this match {
-      case TClass(Ref(cls), typeArgs) if typeArgs.nonEmpty =>
+      case TByReferenceClass(Ref(cls), typeArgs) if typeArgs.nonEmpty =>
+        t.particularize(cls.typeArgs.zip(typeArgs).toMap)
+      case TByValueClass(Ref(cls), typeArgs) if typeArgs.nonEmpty =>
         t.particularize(cls.typeArgs.zip(typeArgs).toMap)
       case _ => t
     }

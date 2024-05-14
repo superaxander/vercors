@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import hre.util.FuncTools
 import vct.col.ast.`type`.typeclass.TFloats
 import vct.col.ast.lang.java.JavaAnnotationEx
-import vct.col.ast.{ApplicableContract, AxiomaticDataType, BipPortType, Block, EmptyProcess, Expr, JavaAnnotation, JavaAnnotationInterface, JavaClass, JavaClassDeclaration, JavaClassOrInterface, JavaConstructor, JavaFields, JavaFinal, JavaImport, JavaInterface, JavaMethod, JavaModifier, JavaName, JavaNamedType, JavaNamespace, JavaParam, JavaStatic, JavaTClass, JavaVariableDeclaration, JavaWildcard, LiteralBag, LiteralMap, LiteralSeq, LiteralSet, Node, Null, OptNone, TAnyClass, TArray, TBag, TBool, TChar, TClass, TEnum, TFloat, TInt, TMap, TModel, TNotAValue, TNull, TOption, TPointer, TProcess, TRational, TRef, TSeq, TSet, TString, TUnion, TVoid, TZFraction, Type, UnitAccountedPredicate, Variable, Void}
+import vct.col.ast.{ApplicableContract, AxiomaticDataType, BipPortType, Block, EmptyProcess, Expr, JavaAnnotation, JavaAnnotationInterface, JavaClass, JavaClassDeclaration, JavaClassOrInterface, JavaConstructor, JavaFields, JavaFinal, JavaImport, JavaInterface, JavaMethod, JavaModifier, JavaName, JavaNamedType, JavaNamespace, JavaParam, JavaStatic, JavaTClass, JavaVariableDeclaration, JavaWildcard, LiteralBag, LiteralMap, LiteralSeq, LiteralSet, Node, Null, OptNone, TAnyClass, TArray, TBag, TBool, TByReferenceClass, TChar, TClass, TEnum, TFloat, TInt, TMap, TModel, TNotAValue, TNull, TOption, TPointer, TProcess, TRational, TRef, TSeq, TSet, TString, TUnion, TVoid, TZFraction, Type, UnitAccountedPredicate, Variable, Void}
 import vct.col.origin._
 import vct.col.ref.Ref
 import vct.col.resolve.Resolve.{getLit, isBip}
@@ -522,7 +522,7 @@ case object Java extends LazyLogging {
     case t: TFloat[G] => const(0)
     case TRational() => const(0)
     case TZFraction() => const(0)
-    case TClass(_, _) => Null()
+    case TByReferenceClass(_, _) => Null()
     case JavaTClass(_, _) => Null()
     case TEnum(_) => Null()
     case TAnyClass() => Null()

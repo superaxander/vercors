@@ -53,7 +53,7 @@ object Utils {
     case _ => expr.subnodes.collect{ case ex: Expr[G] => ex }.flatMap(e => find_all_subexpressions(e))
   }
 
-  private def get_out_variable[G](cls: Ref[G, Class[G]],  o: Origin): Local[G] = Local(new DirectRef[G, Variable[G]](new Variable(TClass(cls, Seq()))(o)))(o)
+  private def get_out_variable[G](cls: Ref[G, Class[G]],  o: Origin): Local[G] = Local(new DirectRef[G, Variable[G]](new Variable(TByReferenceClass(cls, Seq()))(o)))(o)
 
   def find_all_cases[G](body: Statement[G], index: GlobalIndex[G]): Seq[(SwitchCase[G], GlobalIndex[G])] = body match {
     case Switch(_, _) => Seq()

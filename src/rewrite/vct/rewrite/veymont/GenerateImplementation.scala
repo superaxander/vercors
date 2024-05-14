@@ -2,7 +2,7 @@ package vct.rewrite.veymont
 
 import com.typesafe.scalalogging.LazyLogging
 import hre.util.ScopedStack
-import vct.col.ast.{AbstractRewriter, ApplicableContract, Assert, Assign, Block, BooleanValue, Branch, ChorBranch, ChorGuard, ChorLoop, ChorPerm, ChorRun, ChorStatement, Choreography, Class, ClassDeclaration, CommunicateX, ConstructorInvocation, Declaration, Deref, Endpoint, EndpointGuard, EndpointName, Eval, Expr, Fork, InstanceField, InstanceMethod, JavaClass, JavaConstructor, JavaInvocation, JavaLocal, JavaMethod, JavaNamedType, JavaParam, JavaPublic, JavaTClass, Join, Local, Loop, MethodInvocation, NewObject, Node, Null, Perm, Procedure, Program, RunMethod, Scope, Star, Statement, TClass, TVeyMontChannel, TVoid, ThisChoreography, ThisObject, Type, UnitAccountedPredicate, Variable, VeyMontAssignExpression}
+import vct.col.ast.{AbstractRewriter, ApplicableContract, Assert, Assign, Block, BooleanValue, Branch, ByReferenceClass, ChorBranch, ChorGuard, ChorLoop, ChorPerm, ChorRun, ChorStatement, Choreography, Class, ClassDeclaration, CommunicateX, ConstructorInvocation, Declaration, Deref, Endpoint, EndpointGuard, EndpointName, Eval, Expr, Fork, InstanceField, InstanceMethod, JavaClass, JavaConstructor, JavaInvocation, JavaLocal, JavaMethod, JavaNamedType, JavaParam, JavaPublic, JavaTClass, Join, Local, Loop, MethodInvocation, NewObject, Node, Null, Perm, Procedure, Program, RunMethod, Scope, Star, Statement, TClass, TByReferenceClass, TVeyMontChannel, TVoid, ThisChoreography, ThisObject, Type, UnitAccountedPredicate, Variable, VeyMontAssignExpression}
 import vct.col.origin.{AssignLocalOk, Name, Origin, PanicBlame}
 import vct.col.ref.Ref
 import vct.col.resolve.ctx.RefJavaMethod
@@ -102,7 +102,7 @@ case class GenerateImplementation[Pre <: Generation]() extends Rewriter[Pre] wit
   override def dispatch(decl: Declaration[Pre]) : Unit = {
     decl match {
       case p: Procedure[Pre] => super.dispatch(p)
-      case cls: Class[Pre] if isEndpointClass(cls) =>
+      case cls: ByReferenceClass[Pre] if isEndpointClass(cls) =>
         val chor = choreographyOf(cls)
         val endpoint = endpointOf(cls)
         currentThis.having(ThisObject[Post](succ(cls))(cls.o)) {
@@ -289,7 +289,7 @@ case class GenerateImplementation[Pre <: Generation]() extends Rewriter[Pre] wit
       globalDeclarations.declare(c)
     }
     seqProg.endpoints.foreach(thread => {
-      val threadField = new InstanceField[Post](TClass(givenClassSucc.ref(thread.t), Seq()), Nil)(thread.o)
+      val threadField = new InstanceField[Post](TByReferenceClass(givenClassSucc.ref(thread.t), Seq()), Nil)(thread.o)
       val channelFields = getChannelFields(thread, indexedChannelInfo, channelClasses)
       threadBuildingBlocks.having(new ThreadBuildingBlocks(seqProg.run, seqProg.decls, channelFields, channelClasses, thread, threadField)) {
         dispatch(thread)
@@ -297,14 +297,14 @@ case class GenerateImplementation[Pre <: Generation]() extends Rewriter[Pre] wit
     })
   }
 
-  private def dispatchGivenClass(c: Class[Pre]): Class[Post] = {
+  private def dispatchGivenClass(c: ByReferenceClass[Pre]): Class[Post] = {
     val rw = GivenClassRewriter()
     val gc = c.rewrite(
       decls = classDeclarations.collect {
-        (givenClassConstrSucc.get(TClass(c.ref, Seq())).get +: c.declarations).foreach(d => rw.dispatch(d))
+        (givenClassConstrSucc.get(TByReferenceClass(c.ref, Seq())).get +: c.declarations).foreach(d => rw.dispatch(d))
       }._1
     )(rw)
-    givenClassSucc.update(TClass(c.ref, Seq()),gc)
+    givenClassSucc.update(TByReferenceClass(c.ref, Seq()),gc)
     gc
   }
 
@@ -348,7 +348,7 @@ case class GenerateImplementation[Pre <: Generation]() extends Rewriter[Pre] wit
           JavaLocal[Post](getVarName(l.ref.decl).camel)(null)(e.o)
         else rewriteDefault(l)
       case t: ThisObject[Pre] =>
-        val thisClassType = TClass(t.cls, Seq())
+        val thisClassType = TByReferenceClass(t.cls, Seq())
         if(rewritingConstr.nonEmpty && rewritingConstr.top._2 == thisClassType)
           ThisObject(givenClassSucc.ref[Post,Class[Post]](thisClassType))(t.o)
         else rewriteDefault(t)
@@ -384,7 +384,7 @@ case class GenerateImplementation[Pre <: Generation]() extends Rewriter[Pre] wit
     val threadConstr = createThreadClassConstructor(thread,threadRes.threadField)
     val threadRun = getThreadRunMethod(threadRes.runMethod)
     classDeclarations.scope {
-      val threadClass = new Class[Post](Seq(),
+      val threadClass = new ByReferenceClass[Post](Seq(),
         (threadRes.threadField +: threadRes.channelFields.values.toSeq) ++ (threadConstr +: threadRun +: threadMethods), Seq(), BooleanValue(true)(thread.o))(ThreadClassOrigin(thread))
       globalDeclarations.declare(threadClass)
       threadClassSucc.update(thread, threadClass)

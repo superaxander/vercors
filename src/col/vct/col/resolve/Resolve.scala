@@ -142,7 +142,9 @@ case object ResolveTypes {
         throw NoSuchNameError("class", name, t)))
     case t @ TModel(ref) =>
       ref.tryResolve(name => Spec.findModel(name, ctx).getOrElse(throw NoSuchNameError("model", name, t)))
-    case t @ TClass(ref, _) =>
+    case t @ TByReferenceClass(ref, _) =>
+      ref.tryResolve(name => Spec.findClass(name, ctx).getOrElse(throw NoSuchNameError("class", name, t)))
+    case t @ TByValueClass(ref, _) =>
       ref.tryResolve(name => Spec.findClass(name, ctx).getOrElse(throw NoSuchNameError("class", name, t)))
     case t @ TAxiomatic(ref, _) =>
       ref.tryResolve(name => Spec.findAdt(name, ctx).getOrElse(throw NoSuchNameError("adt", name, t)))
@@ -430,7 +432,7 @@ case object ResolveReferences extends LazyLogging {
       case None => throw NoSuchNameError("endpoint", name, local)
     }
     case endpoint: PVLEndpoint[G] =>
-      endpoint.ref = Some(PVL.findConstructor(TClass(endpoint.cls.decl.ref[Class[G]], Seq()), Seq(), endpoint.args).getOrElse(throw ConstructorNotFound(endpoint)))
+      endpoint.ref = Some(PVL.findConstructor(TByReferenceClass(endpoint.cls.decl.ref[Class[G]], Seq()), Seq(), endpoint.args).getOrElse(throw ConstructorNotFound(endpoint)))
     case deref@CStructDeref(struct, field) =>
       deref.ref = Some(C.findPointerDeref(struct, field, ctx, deref.blame).getOrElse(throw NoSuchNameError("field", field, deref)))
     case deref@CStructAccess(obj, field) =>

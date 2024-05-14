@@ -51,7 +51,7 @@ object Types {
     case (TType(left), TType(right)) =>
       TType(leastCommonSuperType(left, right))
 
-    case (left @ TClass(_, _), right @ TClass(_, _)) =>
+    case (left: TClass[G], right: TClass[G]) =>
       val leftArrows = left.transSupportArrows
       val rightArrows = right.transSupportArrows
       // Shared support are classes where there is an incoming left-arrow and right-arrow
@@ -67,7 +67,7 @@ object Types {
         case other => TUnion(other)
       }
 
-    case (TClass(_, _), TAnyClass()) | (TAnyClass(), TClass(_, _)) =>
+    case (_: TClass[G], TAnyClass()) | (TAnyClass(), _: TClass[G]) =>
       TAnyClass()
 
     // TODO similar stuff for JavaClass

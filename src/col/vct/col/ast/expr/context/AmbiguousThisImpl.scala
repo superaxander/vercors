@@ -13,7 +13,7 @@ trait AmbiguousThisImpl[G] extends AmbiguousThisOps[G] { this: AmbiguousThis[G] 
         "'this' encountered, but the surrounding class is not resolved.")
     ) match {
       case RefJavaClass(decl) => JavaTClass(decl.ref, Nil)
-      case RefClass(decl) => TClass(decl.ref, decl.typeArgs.map((v: Variable[G]) => TVar(v.ref[Variable[G]])))
+      case RefClass(decl) => decl.classType(decl.typeArgs.map((v: Variable[G]) => TVar(v.ref[Variable[G]])))
       case RefModel(decl) => TModel(decl.ref)
       case RefPVLChoreography(decl) => TPVLChoreography(decl.ref)
       case RefChoreography(decl) => TChoreography(decl.ref)

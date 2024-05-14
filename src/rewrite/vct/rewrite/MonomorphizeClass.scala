@@ -63,7 +63,10 @@ case class MonomorphizeClass[Pre <: Generation]() extends Rewriter[Pre] with Laz
       globalDeclarations.scope {
         classDeclarations.scope {
           variables.scope {
-            allScopes.anyDeclare(allScopes.anySucceedOnly(cls, cls.rewrite(typeArgs = Seq())))
+            allScopes.anyDeclare(allScopes.anySucceedOnly(cls, cls match {
+              case cls: ByReferenceClass[Pre] => cls.rewrite(typeArgs = Seq())
+              case cls: ByValueClass[Pre] => cls.rewrite(typeArgs = Seq())
+            }))
           }
         }
       }
@@ -95,13 +98,20 @@ case class MonomorphizeClass[Pre <: Generation]() extends Rewriter[Pre] with Laz
   }
 
   override def dispatch(t: Type[Pre]): Type[Post] = (t, ctx.topOption) match {
-    case (TClass(Ref(cls), typeArgs), ctx) if typeArgs.nonEmpty =>
+    case (TByReferenceClass(Ref(cls), typeArgs), ctx) if typeArgs.nonEmpty =>
       val typeValues = ctx match {
         case Some(ctx) => typeArgs.map(ctx.substitute.dispatch)
         case None => typeArgs
       }
       instantiate(cls, typeValues, false)
-      TClass[Post](genericSucc.ref[Post, Class[Post]](((cls, typeValues), cls)), Seq())
+      TByReferenceClass[Post](genericSucc.ref[Post, Class[Post]](((cls, typeValues), cls)), Seq())
+    case (TByValueClass(Ref(cls), typeArgs), ctx) if typeArgs.nonEmpty =>
+      val typeValues = ctx match {
+        case Some(ctx) => typeArgs.map(ctx.substitute.dispatch)
+        case None => typeArgs
+      }
+      instantiate(cls, typeValues, false)
+      TByValueClass[Post](genericSucc.ref[Post, Class[Post]](((cls, typeValues), cls)), Seq())
     case (tvar @ TVar(_), Some(ctx)) =>
       dispatch(ctx.substitutions(tvar))
     case _ => t.rewriteDefault()
@@ -117,11 +127,11 @@ case class MonomorphizeClass[Pre <: Generation]() extends Rewriter[Pre] with Laz
       )
     case inv: InvokeMethod[Pre]  =>
       inv.obj.t match {
-        case TClass(Ref(cls), typeArgs) if typeArgs.nonEmpty =>
-          val typeValues = ctx.topOption.map(_.evalTypes(typeArgs)).getOrElse(typeArgs)
-          instantiate(cls, typeValues, false)
+        case t: TClass[Pre] if t.typeArgs.nonEmpty =>
+          val typeValues = ctx.topOption.map(_.evalTypes(t.typeArgs)).getOrElse(t.typeArgs)
+          instantiate(t.cls.decl, typeValues, false)
           inv.rewrite(
-            ref = genericSucc.ref[Post, InstanceMethod[Post]](((cls, typeValues), inv.ref.decl))
+            ref = genericSucc.ref[Post, InstanceMethod[Post]](((t.cls.decl, typeValues), inv.ref.decl))
           )
         case _ => inv.rewriteDefault()
       }
@@ -131,11 +141,11 @@ case class MonomorphizeClass[Pre <: Generation]() extends Rewriter[Pre] with Laz
   override def dispatch(loc: Location[Pre]): Location[Post] = loc match {
     case loc @ FieldLocation(obj, Ref(field)) =>
       obj.t match {
-        case TClass(Ref(cls), typeArgs) if typeArgs.nonEmpty =>
-          val typeArgs1 = ctx.topOption.map(_.evalTypes(typeArgs)).getOrElse(typeArgs)
-          instantiate(cls, typeArgs1, false)
+        case t: TClass[Pre] if t.typeArgs.nonEmpty =>
+          val typeArgs1 = ctx.topOption.map(_.evalTypes(t.typeArgs)).getOrElse(t.typeArgs)
+          instantiate(t.cls.decl, typeArgs1, false)
           loc.rewrite(
-            field = genericSucc.ref[Post, InstanceField[Post]](((cls, typeArgs1), field))
+            field = genericSucc.ref[Post, InstanceField[Post]](((t.cls.decl, typeArgs1), field))
           )
         case _ => loc.rewriteDefault()
       }
@@ -145,11 +155,11 @@ case class MonomorphizeClass[Pre <: Generation]() extends Rewriter[Pre] with Laz
   override def dispatch(expr: Expr[Pre]): Expr[Post] = expr match {
     case deref @ Deref(obj, Ref(field)) =>
       obj.t match {
-        case TClass(Ref(cls), typeArgs) if typeArgs.nonEmpty =>
-          val typeArgs1 = ctx.topOption.map(_.evalTypes(typeArgs)).getOrElse(typeArgs)
-          instantiate(cls, typeArgs1, false)
+        case t: TClass[Pre] if t.typeArgs.nonEmpty =>
+          val typeArgs1 = ctx.topOption.map(_.evalTypes(t.typeArgs)).getOrElse(t.typeArgs)
+          instantiate(t.cls.decl, typeArgs1, false)
           deref.rewrite(
-            ref = genericSucc.ref[Post, InstanceField[Post]](((cls, typeArgs1), field))
+            ref = genericSucc.ref[Post, InstanceField[Post]](((t.cls.decl, typeArgs1), field))
           )
         case _ => deref.rewriteDefault()
       }

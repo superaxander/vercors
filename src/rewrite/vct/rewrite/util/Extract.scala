@@ -65,7 +65,7 @@ case class Extract[G]() {
         v -> Local(getOrElseUpdate(ReadFreeVar(v), new Variable(extract(v.t))(v.ref.decl.o)).ref[Variable[G]])(ExtractOrigin(""))
       case free @ FreeThisObject(t) =>
         if (t.cls.decl.typeArgs.nonEmpty) throw GenericsNotSupported(t.cls.decl)
-        t -> Local(getOrElseUpdate(free, new Variable(extract(TClass(t.cls, Seq())))(ExtractOrigin("this"))).ref[Variable[G]])(ExtractOrigin(""))
+        t -> Local(getOrElseUpdate(free, new Variable(extract(t.cls.decl.classType(Seq())))(ExtractOrigin("this"))).ref[Variable[G]])(ExtractOrigin(""))
       case free @ FreeThisModel(t) =>
         t -> Local(getOrElseUpdate(free, new Variable(extract(TModel(t.cls)))(ExtractOrigin("this"))).ref[Variable[G]])(ExtractOrigin(""))
     }.to(ListMap)

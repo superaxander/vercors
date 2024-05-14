@@ -167,7 +167,7 @@ case class GenerateChoreographyPermissions[Pre <: Generation](enabled: Boolean =
     transitivePerm(Result[Post](anySucc(app)), app.returnType)
 
   def classPerm(cls: Class[Pre]): Expr[Post] =
-    transitivePerm(ThisObject[Post](succ(cls))(cls.o), TClass(cls.ref, Seq()))(cls.o)
+    transitivePerm(ThisObject[Post](succ(cls))(cls.o), cls.classType(Seq()))(cls.o)
 
   /*
 
@@ -198,14 +198,14 @@ case class GenerateChoreographyPermissions[Pre <: Generation](enabled: Boolean =
             (Perm(ArrayLocation(e, i)(PanicBlame("Encoding guarantees well-formedness")), WritePerm()) &*
               transitivePerm(ArraySubscript(e, i)(PanicBlame("Encoding guarantees well-formedness")), u))
       )
-    case TClass(Ref(cls), _) if !generatingClasses.contains(cls) =>
-      generatingClasses.having(cls) {
-        foldStar(cls.collect { case f: InstanceField[Pre] => fieldTransitivePerm(e, f)(f.o) })
+    case t: TClass[Pre] if !generatingClasses.contains(t.cls.decl) =>
+      generatingClasses.having(t.cls.decl) {
+        foldStar(t.cls.decl.collect { case f: InstanceField[Pre] => fieldTransitivePerm(e, f)(f.o) })
       }
-    case TClass(Ref(cls), _) =>
+    case t: TClass[Pre] =>
       // The class we are generating permission for has already been encountered when going through the chain
       // of fields. So we cut off the computation
-      logger.warn(s"Not generating permissions for recursive occurrence of ${cls.o.getPreferredNameOrElse().ucamel}. Circular datastructures are not supported by permission generation")
+      logger.warn(s"Not generating permissions for recursive occurrence of ${t.cls.o.getPreferredNameOrElse().ucamel}. Circular datastructures are not supported by permission generation")
       tt
     case _ => tt
   }

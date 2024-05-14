@@ -156,7 +156,9 @@ final case class TZFraction[G]()(implicit val o: Origin = DiagnosticOrigin) exte
 
 sealed trait DeclaredType[G] extends Type[G] with DeclaredTypeImpl[G]
 final case class TModel[G](model: Ref[G, Model[G]])(implicit val o: Origin = DiagnosticOrigin) extends DeclaredType[G] with TModelImpl[G]
-final case class TClass[G](cls: Ref[G, Class[G]], typeArgs: Seq[Type[G]])(implicit val o: Origin = DiagnosticOrigin) extends DeclaredType[G] with TClassImpl[G]
+sealed trait TClass[G] extends DeclaredType[G] with TClassImpl[G]
+final case class TByReferenceClass[G](cls: Ref[G, Class[G]], typeArgs: Seq[Type[G]])(implicit val o: Origin = DiagnosticOrigin) extends TClass[G] with TByReferenceClassImpl[G]
+final case class TByValueClass[G](cls: Ref[G, Class[G]], typeArgs: Seq[Type[G]])(implicit val o: Origin = DiagnosticOrigin) extends TClass[G] with TByValueClassImpl[G]
 final case class TAnyClass[G]()(implicit val o: Origin = DiagnosticOrigin) extends DeclaredType[G] with TAnyClassImpl[G]
 final case class TAxiomatic[G](adt: Ref[G, AxiomaticDataType[G]], args: Seq[Type[G]])(implicit val o: Origin = DiagnosticOrigin) extends DeclaredType[G] with TAxiomaticImpl[G]
 final case class TEnum[G](enum: Ref[G, Enum[G]])(implicit val o: Origin = DiagnosticOrigin) extends DeclaredType[G] with TEnumImpl[G]
@@ -251,7 +253,9 @@ final case class ModelDo[G](model: Expr[G], perm: Expr[G], after: Expr[G], actio
 final class HeapVariable[G](val t: Type[G])(implicit val o: Origin) extends GlobalDeclaration[G] with HeapVariableImpl[G]
 final class SimplificationRule[G](val axiom: Expr[G])(implicit val o: Origin) extends GlobalDeclaration[G] with SimplificationRuleImpl[G]
 @scopes[Variable] final class AxiomaticDataType[G](val decls: Seq[ADTDeclaration[G]], val typeArgs: Seq[Variable[G]])(implicit val o: Origin) extends GlobalDeclaration[G] with AxiomaticDataTypeImpl[G]
-final class Class[G](val typeArgs: Seq[Variable[G]], val decls: Seq[ClassDeclaration[G]], val supports: Seq[Type[G]], val intrinsicLockInvariant: Expr[G])(implicit val o: Origin) extends GlobalDeclaration[G] with ClassImpl[G]
+sealed trait Class[G] extends GlobalDeclaration[G] with ClassImpl[G]
+final class ByReferenceClass[G](val typeArgs: Seq[Variable[G]], val decls: Seq[ClassDeclaration[G]], val supports: Seq[Type[G]], val intrinsicLockInvariant: Expr[G])(implicit val o: Origin) extends Class[G] with ByReferenceClassImpl[G]
+final class ByValueClass[G](val typeArgs: Seq[Variable[G]], val decls: Seq[ClassDeclaration[G]], val supports: Seq[Type[G]])(implicit val o: Origin) extends Class[G] with ByValueClassImpl[G]
 final class Model[G](val declarations: Seq[ModelDeclaration[G]])(implicit val o: Origin) extends GlobalDeclaration[G] with Declarator[G] with ModelImpl[G]
 @scopes[LabelDecl] final class Function[G](val returnType: Type[G], val args: Seq[Variable[G]], val typeArgs: Seq[Variable[G]],
                val body: Option[Expr[G]], val contract: ApplicableContract[G], val inline: Boolean = false, val threadLocal: Boolean = false)
