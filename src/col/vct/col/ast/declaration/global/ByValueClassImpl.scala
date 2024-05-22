@@ -1,8 +1,8 @@
-package vct.col.ast.unsorted
+package vct.col.ast.declaration.global
 
-import vct.col.ast.{ByValueClass, Expr, TByValueClass, Type}
+import vct.col.ast.{ByValueClass, Expr, InstanceField, TByValueClass, Type}
 import vct.col.ast.ops.ByValueClassOps
-import vct.col.util.AstBuildHelpers.tt
+import vct.col.util.AstBuildHelpers._
 
 trait ByValueClassImpl[G] extends ByValueClassOps[G] { this: ByValueClass[G] =>
   override def intrinsicLockInvariant: Expr[G] = tt

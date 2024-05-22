@@ -129,15 +129,15 @@ case class AssignFieldFailed(node: SilverFieldAssign[_]) extends AssignFailed wi
   override def inlineDescWithSource(source: String): String = s"Insufficient permission for assignment `$source`."
 }
 
-case class CopyStructFailed(node: Expr[_], field: String) extends AssignFailed with NodeVerificationFailure {
-  override def code: String = "copyStructFailed"
-  override def descInContext: String = s"Insufficient read permission for field '$field' to copy struct."
+case class CopyClassFailed(node: Node[_], clazz: ByValueClass[_], field: String) extends AssignFailed with NodeVerificationFailure {
+  override def code: String = "copyClassFailed"
+  override def descInContext: String = s"Insufficient read permission for field '$field' to copy ${clazz.o.find[TypeName].map(_.name).getOrElse("class")}."
   override def inlineDescWithSource(source: String): String = s"Insufficient permission for assignment `$source`."
 }
 
-case class CopyStructFailedBeforeCall(node: Expr[_], field: String) extends AssignFailed with FrontendInvocationError with NodeVerificationFailure {
-  override def code: String = "copyStructFailedBeforeCall"
-  override def descInContext: String = s"Insufficient read permission for field '$field' to copy struct before call."
+case class CopyClassFailedBeforeCall(node: Node[_], clazz: ByValueClass[_], field: String) extends AssignFailed with InvocationFailure with NodeVerificationFailure {
+  override def code: String = "copyClassFailedBeforeCall"
+  override def descInContext: String = s"Insufficient read permission for field '$field' to copy ${clazz.o.find[TypeName].map(_.name).getOrElse("class")} before call."
   override def inlineDescWithSource(source: String): String = s"Insufficient permission for call `$source`."
 }
 

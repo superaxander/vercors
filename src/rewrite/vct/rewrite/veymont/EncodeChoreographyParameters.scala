@@ -2,7 +2,7 @@ package vct.rewrite.veymont
 
 import com.typesafe.scalalogging.LazyLogging
 import hre.util.ScopedStack
-import vct.col.ast.{Block, Choreography, Class, Declaration, Endpoint, EndpointName, Expr, InstanceField, Local, Program, Variable}
+import vct.col.ast.{Block, ByReferenceClass, Choreography, Declaration, Endpoint, EndpointName, Expr, InstanceField, Local, Program, Variable}
 import vct.col.origin.{Name, PanicBlame}
 import vct.col.rewrite.{Generation, Rewriter, RewriterBuilder}
 import vct.col.util.SuccessionMap
@@ -28,8 +28,8 @@ case class EncodeChoreographyParameters[Pre <: Generation]() extends Rewriter[Pr
   var program: Program[Pre] = null
   lazy val choreographies = program.declarations.collect { case p: Choreography[Pre] => p }
   lazy val allEndpoints = choreographies.flatMap { _.endpoints }
-  lazy val endpointOfClass: Map[Class[Pre], Endpoint[Pre]] =
-    allEndpoints.map { endpoint => (endpoint.cls.decl, endpoint) }.toMap
+  lazy val endpointOfClass: Map[ByReferenceClass[Pre], Endpoint[Pre]] =
+    allEndpoints.map { endpoint => (endpoint.cls.decl.asInstanceOf[ByReferenceClass[Pre]], endpoint) }.toMap
   lazy val choreographyOfEndpoint: Map[Endpoint[Pre], Choreography[Pre]] = choreographies.flatMap { chor =>
     chor.endpoints.map { ep => (ep, chor) }
   }.toMap
@@ -64,7 +64,7 @@ case class EncodeChoreographyParameters[Pre <: Generation]() extends Rewriter[Pr
           }
         ))
       }
-    case cls: Class[Pre] if endpointOfClass.contains(cls) =>
+    case cls: ByReferenceClass[Pre] if endpointOfClass.contains(cls) =>
       val endpoint = endpointOfClass(cls)
       val chor = choreographyOfEndpoint(endpoint)
       implicit val o = chor.o

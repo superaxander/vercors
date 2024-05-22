@@ -1,9 +1,7 @@
-package vct.col.ast.unsorted
+package vct.col.ast.`type`
 
 import vct.col.ast.TByValueClass
 import vct.col.ast.ops.TByValueClassOps
-import vct.col.print._
 
 trait TByValueClassImpl[G] extends TByValueClassOps[G] { this: TByValueClass[G] =>
-  // override def layout(implicit ctx: Ctx): Doc = ???
 }

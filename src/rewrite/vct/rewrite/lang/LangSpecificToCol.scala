@@ -258,10 +258,8 @@ case class LangSpecificToCol[Pre <: Generation](veymontGeneratePermissions: Bool
 
     case assign: PreAssignExpression[Pre] =>
       assign.target.t match {
-        case CPrimitiveType(specs) if specs.collectFirst { case CSpecificationType(_: CTStruct[Pre]) => () }.isDefined =>
-          c.assignStruct(assign)
         case CPPPrimitiveType(_) => cpp.preAssignExpr(assign)
-        case _ => rewriteDefault(assign)
+        case _ => assign.rewriteDefault()
       }
 
     case inv: SilverPartialADTFunctionInvocation[Pre] => silver.adtInvocation(inv)

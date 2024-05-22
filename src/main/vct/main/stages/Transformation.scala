@@ -24,7 +24,7 @@ import vct.options.types.{Backend, PathOrStd}
 import vct.resources.Resources
 import vct.result.VerificationError.SystemError
 import vct.rewrite.adt.ImportSetCompat
-import vct.rewrite.{EncodeRange, EncodeResourceValues, ExplicitResourceValues, HeapVariableToRef, MonomorphizeClass, SmtlibToProverTypes}
+import vct.rewrite.{EncodeRange, EncodeResourceValues, ExplicitResourceValues, HeapVariableToRef, MonomorphizeClass, SmtlibToProverTypes, EncodeByValueClass}
 import vct.rewrite.lang.ReplaceSYCLTypes
 import vct.rewrite.veymont.{DeduplicateChorGuards, EncodeChannels, EncodeChorBranchUnanimity, EncodeChoreography, EncodeChoreographyParameters, EncodeEndpointInequalities, EncodeUnpointedGuard, GenerateChoreographyPermissions, GenerateImplementation, InferEndpointContexts, SpecializeEndpointClasses, SplitChorGuards}
 
@@ -229,6 +229,7 @@ case class SilverTransformation
     EncodeChar,
 
     CollectLocalDeclarations, // all decls in Scope
+    EncodeByValueClass,
     DesugarPermissionOperators, // no PointsTo, \pointer, etc.
     ReadToValue, // resolve wildcard into fractional permission
     TrivialAddrOf,

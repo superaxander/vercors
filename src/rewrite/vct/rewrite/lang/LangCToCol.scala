@@ -146,18 +146,6 @@ case object LangCToCol {
     }
   }
 
-  case class StructCopyFailed(assign: PreAssignExpression[_], field: InstanceField[_]) extends Blame[InsufficientPermission] {
-    override def blame(error: InsufficientPermission): Unit = {
-      assign.blame.blame(CopyStructFailed(assign, Referrable.originName(field)))
-    }
-  }
-
-  case class StructCopyBeforeCallFailed(inv: CInvocation[_], field: InstanceField[_]) extends Blame[InsufficientPermission] {
-    override def blame(error: InsufficientPermission): Unit = {
-      inv.blame.blame(CopyStructFailedBeforeCall(inv, Referrable.originName(field)))
-    }
-  }
-
   case class UnsupportedCast(c: CCast[_]) extends UserError {
     override def code: String = "unsupportedCast"
     override def text: String = c.o.messageInContext("This cast is not supported")
@@ -208,7 +196,7 @@ case class LangCToCol[Pre <: Generation](rw: LangSpecificToCol[Pre]) extends Laz
   private var kernelSpecifier: Option[CGpgpuKernelSpecifier[Pre]] = None
 
   private def CStructOrigin(sdecl: CStructDeclaration[_]): Origin =
-    sdecl.o.sourceName(sdecl.name.get)
+    sdecl.o.sourceName(sdecl.name.get).withContent(TypeName("struct"))
 
   private def CStructFieldOrigin(cdecl: CDeclarator[_]): Origin =
     cdecl.o.sourceName(nameFromDeclarator(cdecl))
@@ -797,13 +785,11 @@ case class LangCToCol[Pre <: Generation](rw: LangSpecificToCol[Pre]) extends Laz
     val v = new Variable[Post](t)(o.sourceName(info.name))
     cNameSuccessor(RefCLocalDeclaration(decl, 0)) = v
 
-    val copy = init.init.map( v =>
-      Eval(createStructCopy(rw.dispatch(v), ref.decl, (f: InstanceField[_]) => PanicBlame("Cannot fail due to insufficient perm")))
-    )
-
-    val stats = Seq(LocalDecl(v), assignLocal(v.get, NewObject[Post](targetClass.ref))) ++
-      copy.toSeq
-    Block(stats)
+    if (init.init.isDefined) {
+      Block(Seq(LocalDecl(v), assignLocal(v.get, rw.dispatch(init.init.get))))
+    } else {
+      LocalDecl(v)
+    }
   }
 
   def rewriteLocal(decl: CLocalDeclaration[Pre]): Statement[Post] = {
@@ -1020,31 +1006,6 @@ case class LangCToCol[Pre <: Generation](rw: LangSpecificToCol[Pre]) extends Laz
     foldStar(newFieldPerms)
   }
 
-
-  def createStructCopy(a: Expr[Post], target: CGlobalDeclaration[Pre], blame: InstanceField[_] => Blame[InsufficientPermission]): Expr[Post] = {
-    implicit val o: Origin = a.o
-    val targetClass: Class[Post] = cStructSuccessor(target)
-    val t = TByValueClass[Post](targetClass.ref, Seq())
-
-    val v = new Variable[Post](t)
-    val fieldAssigns = targetClass.declarations.collect {
-      case field: InstanceField[Post] =>
-        val ref: Ref[Post, InstanceField[Post]] = field.ref
-        assignField(v.get, ref, Deref[Post](a, field.ref)(blame(field)), PanicBlame("Assignment should work"))
-    }
-
-    With(Block(Seq(LocalDecl(v), assignLocal(v.get, NewObject[Post](targetClass.ref))) ++ fieldAssigns), v.get)
-  }
-
-  def assignStruct(assign: PreAssignExpression[Pre]): Expr[Post] = {
-    getBaseType(assign.target.t) match {
-      case CTStruct(ref) =>
-        val copy = createStructCopy(rw.dispatch(assign.value), ref.decl, (f: InstanceField[_]) => StructCopyFailed(assign, f))
-        PreAssignExpression(rw.dispatch(assign.target), copy)(AssignLocalOk)(assign.o)
-      case _ => throw WrongStructType(assign.target)
-    }
-  }
-
   def isCPointer(t: Type[_]) = getBaseType(t) match {
     case CTPointer(_) => true
     case _ => false
@@ -1053,13 +1014,7 @@ case class LangCToCol[Pre <: Generation](rw: LangSpecificToCol[Pre]) extends Laz
   def invocation(inv: CInvocation[Pre]): Expr[Post] = {
     val CInvocation(applicable, args, givenMap, yields) = inv
 
-    // Create copy for any direct structure arguments
-    val newArgs = args.map(a =>
-      getBaseType(a.t) match {
-        case CTStruct(ref) => createStructCopy(rw.dispatch(a), ref.decl, (f: InstanceField[_]) => StructCopyBeforeCallFailed(inv, f))
-        case _ => rw.dispatch(a)
-      }
-    )
+    val newArgs = args.map(a => rw.dispatch(a))
 
     implicit val o: Origin = inv.o
     inv.ref.get match {

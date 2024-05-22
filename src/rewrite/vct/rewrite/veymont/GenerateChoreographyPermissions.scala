@@ -202,10 +202,10 @@ case class GenerateChoreographyPermissions[Pre <: Generation](enabled: Boolean =
       generatingClasses.having(t.cls.decl) {
         foldStar(t.cls.decl.collect { case f: InstanceField[Pre] => fieldTransitivePerm(e, f)(f.o) })
       }
-    case t: TClass[Pre] =>
+    case t: TByReferenceClass[Pre] =>
       // The class we are generating permission for has already been encountered when going through the chain
       // of fields. So we cut off the computation
-      logger.warn(s"Not generating permissions for recursive occurrence of ${t.cls.o.getPreferredNameOrElse().ucamel}. Circular datastructures are not supported by permission generation")
+      logger.warn(s"Not generating permissions for recursive occurrence of ${t.cls.decl.o.getPreferredNameOrElse().ucamel}. Circular datastructures are not supported by permission generation")
       tt
     case _ => tt
   }

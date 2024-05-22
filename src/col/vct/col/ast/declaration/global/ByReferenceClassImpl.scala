@@ -1,4 +1,4 @@
-package vct.col.ast.unsorted
+package vct.col.ast.declaration.global
 
 import vct.col.ast.{ByReferenceClass, TByReferenceClass, Type}
 import vct.col.ast.ops.ByReferenceClassOps
