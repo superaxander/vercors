@@ -63,13 +63,14 @@ case class ResolveScale[Pre <: Generation]() extends Rewriter[Pre] {
   }
 
   def scaleValue(e: Scale[Pre]): Expr[Post] =
-    FunctionInvocation(
-      checkScaleFunc.ref[Function[Post]],
-      Seq(dispatch(e.scale)),
-      Nil,
-      Nil,
-      Nil,
-    )(NoContext(ScaleNegativePreconditionFailed(e)))(e.scale.o)
+    dispatch(e.scale)
+    // FunctionInvocation(
+    //   checkScaleFunc.ref[Function[Post]],
+    //   Seq(dispatch(e.scale)),
+    //   Nil,
+    //   Nil,
+    //   Nil,
+    // )(NoContext(ScaleNegativePreconditionFailed(e)))(e.scale.o)
 
   def scale(res: Expr[Pre], amount: Expr[Post]): Expr[Post] = {
     implicit val o: Origin = res.o
